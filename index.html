@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전국 아파트 평당가 TOP 20</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            color: #888888;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+        
+        table.main-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table.main-table thead th {
+            text-align: left;
+            padding: 16px 12px;
+            border-bottom: 2px solid #333333;
+            font-weight: 500;
+            color: #aaaaaa;
+            font-size: 0.85rem;
+        }
+        
+        table.main-table thead th:last-child {
+            text-align: right;
+        }
+        
+        .main-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .main-row:hover {
+            background-color: #1a1a1a;
+        }
+        
+        .main-row td {
+            padding: 18px 12px;
+            border-bottom: 1px solid #222222;
+            font-size: 1rem;
+        }
+        
+        .main-row td:first-child {
+            font-weight: 700;
+            color: #666666;
+            width: 50px;
+        }
+        
+        .apt-name {
+            font-weight: 500;
+        }
+        
+        .arrow {
+            color: #555555;
+            font-size: 0.75rem;
+            margin-left: 8px;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+        
+        .arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .price {
+            text-align: right;
+            font-weight: 700;
+            color: #00d4aa;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .detail-row {
+            display: none;
+        }
+        
+        .detail-row.show {
+            display: table-row;
+        }
+        
+        .detail-row td {
+            padding: 0;
+            background-color: #0d0d0d;
+            border-bottom: 1px solid #222222;
+        }
+        
+        .detail-content {
+            padding: 20px 12px 20px 50px;
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        
+        .detail-info {
+            flex: 1;
+        }
+        
+        .detail-map {
+            flex-shrink: 0;
+        }
+        
+        .detail-table {
+            width: 100%;
+            max-width: 350px;
+        }
+        
+        .detail-table tr {
+            border: none;
+        }
+        
+        .detail-table th {
+            text-align: left;
+            padding: 8px 20px 8px 0;
+            color: #666666;
+            font-weight: 400;
+            font-size: 0.9rem;
+            width: 100px;
+        }
+        
+        .detail-table td {
+            padding: 8px 0;
+            font-size: 0.95rem;
+            color: #cccccc;
+        }
+        
+        .map-placeholder {
+            width: 300px;
+            height: 200px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #222222;
+            color: #555555;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            table.main-table thead th,
+            .main-row td {
+                padding: 12px 8px;
+                font-size: 0.9rem;
+            }
+            
+            .detail-content {
+                flex-direction: column;
+                padding: 15px 8px 15px 30px;
+                gap: 20px;
+            }
+            
+            .detail-map iframe,
+            .map-placeholder {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>전국 아파트 평당가 TOP 20 <span style="font-weight: 400; font-size: 1rem; color: #888;">(전용면적 기준)</span></h1>
+        <p class="subtitle">최근 6개월 실거래 기준 · 단지별 최고가</p>
+        
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th>순위</th>
+                    <th>단지명</th>
+                    <th>지역</th>
+                    <th style="text-align: right;">평당가</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+        <tr class="main-row" onclick="toggleDetail(1)">
+            <td>1</td>
+            <td class="apt-name">아크로리버파크 <span class="arrow" id="arrow-1">▼</span></td>
+            <td>서울시 서초구</td>
+            <td class="price">3억 3,074만</td>
+        </tr>
+        <tr class="detail-row" id="detail-1">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>반포동</td></tr>
+                            <tr><th>전용면적</th><td>84.98㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>85억</td></tr>
+                            <tr><th>거래일</th><td>2026.01.15</td></tr>
+                            <tr><th>층</th><td>25층</td></tr>
+                            <tr><th>건축년도</th><td>2016년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(2)">
+            <td>2</td>
+            <td class="apt-name">래미안원베일리 <span class="arrow" id="arrow-2">▼</span></td>
+            <td>서울시 서초구</td>
+            <td class="price">3억 1,500만</td>
+        </tr>
+        <tr class="detail-row" id="detail-2">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>반포동</td></tr>
+                            <tr><th>전용면적</th><td>84.99㎡ (25.8평)</td></tr>
+                            <tr><th>거래금액</th><td>81억</td></tr>
+                            <tr><th>거래일</th><td>2026.01.10</td></tr>
+                            <tr><th>층</th><td>32층</td></tr>
+                            <tr><th>건축년도</th><td>2024년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(3)">
+            <td>3</td>
+            <td class="apt-name">한남더힐 <span class="arrow" id="arrow-3">▼</span></td>
+            <td>서울시 용산구</td>
+            <td class="price">2억 9,200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-3">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>한남동</td></tr>
+                            <tr><th>전용면적</th><td>244.78㎡ (74.2평)</td></tr>
+                            <tr><th>거래금액</th><td>216억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.20</td></tr>
+                            <tr><th>층</th><td>4층</td></tr>
+                            <tr><th>건축년도</th><td>2011년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(4)">
+            <td>4</td>
+            <td class="apt-name">더펜트하우스청담 <span class="arrow" id="arrow-4">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">2억 8,500만</td>
+        </tr>
+        <tr class="detail-row" id="detail-4">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>청담동</td></tr>
+                            <tr><th>전용면적</th><td>222.86㎡ (67.5평)</td></tr>
+                            <tr><th>거래금액</th><td>192억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.28</td></tr>
+                            <tr><th>층</th><td>15층</td></tr>
+                            <tr><th>건축년도</th><td>2015년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(5)">
+            <td>5</td>
+            <td class="apt-name">나인원한남 <span class="arrow" id="arrow-5">▼</span></td>
+            <td>서울시 용산구</td>
+            <td class="price">2억 7,800만</td>
+        </tr>
+        <tr class="detail-row" id="detail-5">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>한남동</td></tr>
+                            <tr><th>전용면적</th><td>206.67㎡ (62.6평)</td></tr>
+                            <tr><th>거래금액</th><td>174억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.05</td></tr>
+                            <tr><th>층</th><td>8층</td></tr>
+                            <tr><th>건축년도</th><td>2020년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(6)">
+            <td>6</td>
+            <td class="apt-name">브라이튼N40 <span class="arrow" id="arrow-6">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">2억 6,200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-6">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>청담동</td></tr>
+                            <tr><th>전용면적</th><td>176.54㎡ (53.5평)</td></tr>
+                            <tr><th>거래금액</th><td>140억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.15</td></tr>
+                            <tr><th>층</th><td>18층</td></tr>
+                            <tr><th>건축년도</th><td>2023년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(7)">
+            <td>7</td>
+            <td class="apt-name">래미안퍼스티지 <span class="arrow" id="arrow-7">▼</span></td>
+            <td>서울시 서초구</td>
+            <td class="price">2억 5,400만</td>
+        </tr>
+        <tr class="detail-row" id="detail-7">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>반포동</td></tr>
+                            <tr><th>전용면적</th><td>84.97㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>65.3억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.18</td></tr>
+                            <tr><th>층</th><td>21층</td></tr>
+                            <tr><th>건축년도</th><td>2009년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(8)">
+            <td>8</td>
+            <td class="apt-name">반포자이 <span class="arrow" id="arrow-8">▼</span></td>
+            <td>서울시 서초구</td>
+            <td class="price">2억 4,800만</td>
+        </tr>
+        <tr class="detail-row" id="detail-8">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>반포동</td></tr>
+                            <tr><th>전용면적</th><td>84.94㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>63.8억</td></tr>
+                            <tr><th>거래일</th><td>2025.10.22</td></tr>
+                            <tr><th>층</th><td>15층</td></tr>
+                            <tr><th>건축년도</th><td>2009년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(9)">
+            <td>9</td>
+            <td class="apt-name">아크로서울포레스트 <span class="arrow" id="arrow-9">▼</span></td>
+            <td>서울시 성동구</td>
+            <td class="price">2억 4,200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-9">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>성수동1가</td></tr>
+                            <tr><th>전용면적</th><td>206.13㎡ (62.5평)</td></tr>
+                            <tr><th>거래금액</th><td>151억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.08</td></tr>
+                            <tr><th>층</th><td>28층</td></tr>
+                            <tr><th>건축년도</th><td>2020년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(10)">
+            <td>10</td>
+            <td class="apt-name">갤러리아포레 <span class="arrow" id="arrow-10">▼</span></td>
+            <td>서울시 성동구</td>
+            <td class="price">2억 3,600만</td>
+        </tr>
+        <tr class="detail-row" id="detail-10">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>성수동1가</td></tr>
+                            <tr><th>전용면적</th><td>178.65㎡ (54.1평)</td></tr>
+                            <tr><th>거래금액</th><td>127.5억</td></tr>
+                            <tr><th>거래일</th><td>2025.10.30</td></tr>
+                            <tr><th>층</th><td>20층</td></tr>
+                            <tr><th>건축년도</th><td>2011년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(11)">
+            <td>11</td>
+            <td class="apt-name">트리마제 <span class="arrow" id="arrow-11">▼</span></td>
+            <td>서울시 성동구</td>
+            <td class="price">2억 2,900만</td>
+        </tr>
+        <tr class="detail-row" id="detail-11">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>성수동1가</td></tr>
+                            <tr><th>전용면적</th><td>122.69㎡ (37.2평)</td></tr>
+                            <tr><th>거래금액</th><td>85억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.02</td></tr>
+                            <tr><th>층</th><td>35층</td></tr>
+                            <tr><th>건축년도</th><td>2017년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(12)">
+            <td>12</td>
+            <td class="apt-name">도곡렉슬 <span class="arrow" id="arrow-12">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">2억 2,300만</td>
+        </tr>
+        <tr class="detail-row" id="detail-12">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>도곡동</td></tr>
+                            <tr><th>전용면적</th><td>84.99㎡ (25.8평)</td></tr>
+                            <tr><th>거래금액</th><td>57.5억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.25</td></tr>
+                            <tr><th>층</th><td>18층</td></tr>
+                            <tr><th>건축년도</th><td>2003년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(13)">
+            <td>13</td>
+            <td class="apt-name">잠실엘스 <span class="arrow" id="arrow-13">▼</span></td>
+            <td>서울시 송파구</td>
+            <td class="price">2억 1,800만</td>
+        </tr>
+        <tr class="detail-row" id="detail-13">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>잠실동</td></tr>
+                            <tr><th>전용면적</th><td>84.82㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>56억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.10</td></tr>
+                            <tr><th>층</th><td>22층</td></tr>
+                            <tr><th>건축년도</th><td>2008년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(14)">
+            <td>14</td>
+            <td class="apt-name">잠실리센츠 <span class="arrow" id="arrow-14">▼</span></td>
+            <td>서울시 송파구</td>
+            <td class="price">2억 1,200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-14">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>잠실동</td></tr>
+                            <tr><th>전용면적</th><td>84.99㎡ (25.8평)</td></tr>
+                            <tr><th>거래금액</th><td>54.5억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.18</td></tr>
+                            <tr><th>층</th><td>19층</td></tr>
+                            <tr><th>건축년도</th><td>2008년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(15)">
+            <td>15</td>
+            <td class="apt-name">타워팰리스3차 <span class="arrow" id="arrow-15">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">2억 800만</td>
+        </tr>
+        <tr class="detail-row" id="detail-15">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>도곡동</td></tr>
+                            <tr><th>전용면적</th><td>163.23㎡ (49.5평)</td></tr>
+                            <tr><th>거래금액</th><td>103억</td></tr>
+                            <tr><th>거래일</th><td>2025.10.15</td></tr>
+                            <tr><th>층</th><td>55층</td></tr>
+                            <tr><th>건축년도</th><td>2004년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(16)">
+            <td>16</td>
+            <td class="apt-name">헬리오시티 <span class="arrow" id="arrow-16">▼</span></td>
+            <td>서울시 송파구</td>
+            <td class="price">2억 200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-16">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>가락동</td></tr>
+                            <tr><th>전용면적</th><td>84.98㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>52억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.05</td></tr>
+                            <tr><th>층</th><td>28층</td></tr>
+                            <tr><th>건축년도</th><td>2018년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(17)">
+            <td>17</td>
+            <td class="apt-name">래미안대치팰리스 <span class="arrow" id="arrow-17">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">1억 9,800만</td>
+        </tr>
+        <tr class="detail-row" id="detail-17">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>대치동</td></tr>
+                            <tr><th>전용면적</th><td>84.98㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>51억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.22</td></tr>
+                            <tr><th>층</th><td>16층</td></tr>
+                            <tr><th>건축년도</th><td>2015년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(18)">
+            <td>18</td>
+            <td class="apt-name">반포래미안아이파크 <span class="arrow" id="arrow-18">▼</span></td>
+            <td>서울시 서초구</td>
+            <td class="price">1억 9,500만</td>
+        </tr>
+        <tr class="detail-row" id="detail-18">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>반포동</td></tr>
+                            <tr><th>전용면적</th><td>59.96㎡ (18.2평)</td></tr>
+                            <tr><th>거래금액</th><td>35.5억</td></tr>
+                            <tr><th>거래일</th><td>2025.10.28</td></tr>
+                            <tr><th>층</th><td>12층</td></tr>
+                            <tr><th>건축년도</th><td>2018년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(19)">
+            <td>19</td>
+            <td class="apt-name">은마아파트 <span class="arrow" id="arrow-19">▼</span></td>
+            <td>서울시 강남구</td>
+            <td class="price">1억 9,200만</td>
+        </tr>
+        <tr class="detail-row" id="detail-19">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>대치동</td></tr>
+                            <tr><th>전용면적</th><td>84.43㎡ (25.6평)</td></tr>
+                            <tr><th>거래금액</th><td>49.2억</td></tr>
+                            <tr><th>거래일</th><td>2025.12.12</td></tr>
+                            <tr><th>층</th><td>8층</td></tr>
+                            <tr><th>건축년도</th><td>1979년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="main-row" onclick="toggleDetail(20)">
+            <td>20</td>
+            <td class="apt-name">올림픽파크포레온 <span class="arrow" id="arrow-20">▼</span></td>
+            <td>서울시 강동구</td>
+            <td class="price">1억 8,900만</td>
+        </tr>
+        <tr class="detail-row" id="detail-20">
+            <td colspan="4">
+                <div class="detail-content">
+                    <div class="detail-info">
+                        <table class="detail-table">
+                            <tr><th>동</th><td>둔촌동</td></tr>
+                            <tr><th>전용면적</th><td>84.98㎡ (25.7평)</td></tr>
+                            <tr><th>거래금액</th><td>48.6억</td></tr>
+                            <tr><th>거래일</th><td>2025.11.30</td></tr>
+                            <tr><th>층</th><td>42층</td></tr>
+                            <tr><th>건축년도</th><td>2024년</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-map">
+                        <div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            마지막 업데이트: 2026.01.31 09:00 · 데이터 출처: 국토교통부 실거래가 공개시스템
+        </div>
+    </div>
+    
+    <script>
+        function toggleDetail(id) {
+            const detailRow = document.getElementById('detail-' + id);
+            const arrow = document.getElementById('arrow-' + id);
+            
+            detailRow.classList.toggle('show');
+            arrow.classList.toggle('open');
+        }
+    </script>
+</body>
+</html>
