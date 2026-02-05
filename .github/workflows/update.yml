@@ -1,8 +1,8 @@
-name: Update Korea Apartment Rankings
+name: Update Seoul Apartment Rankings
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # 매일 오전 7시 KST
+    - cron: '0 18 * * 4'  # 매주 금요일 오전 3시 KST (목요일 18:00 UTC)
   workflow_dispatch:
 
 jobs:
