@@ -147,12 +147,22 @@ def get_months(n):
     return sorted(months)
 
 def fetch(code, ym):
-    params = {'serviceKey':API_KEY,'LAWD_CD':code,'DEAL_YMD':ym,'pageNo':'1','numOfRows':'1000'}
+    # data.go.kr API 키는 이미 URL-encode 되어있으므로 직접 URL에 삽입 (이중 인코딩 방지)
+    url = f"{BASE_URL}?serviceKey={API_KEY}&LAWD_CD={code}&DEAL_YMD={ym}&pageNo=1&numOfRows=1000"
     try:
-        r = requests.get(BASE_URL, params=params, timeout=30)
+        r = requests.get(url, timeout=30)
         r.raise_for_status()
+        # API 에러 코드 체크
+        if '<resultCode>' in r.text:
+            import re
+            rc = re.search(r'<resultCode>(\d+)</resultCode>', r.text)
+            rm = re.search(r'<resultMsg>([^<]+)</resultMsg>', r.text)
+            if rc and rc.group(1) != '00':
+                print(f"  ⚠️ API Error [{code}/{ym}]: {rc.group(1)} - {rm.group(1) if rm else 'unknown'}")
+                return []
         return parse(r.text, code)
     except Exception as e:
+        print(f"  ❌ Request failed [{code}/{ym}]: {e}")
         return []
 
 def parse(xml, code):
@@ -586,6 +596,34 @@ function toggleDetail(id) {{
 
 def main():
     print("=== 전국 아파트 평당가 TOP 20 ===\n")
+    
+    # API 키 확인
+    if API_KEY in ('YOUR_API_KEY_HERE', ''):
+        print("❌ MOLIT_API_KEY가 설정되지 않았습니다!")
+        exit(1)
+    print(f"✅ API Key: {API_KEY[:8]}...{API_KEY[-4:]}")
+    
+    # API 테스트 (서울 강남구, 최근 1개월)
+    test_ym = get_months(1)[0]
+    test_url = f"{BASE_URL}?serviceKey={API_KEY}&LAWD_CD=11680&DEAL_YMD={test_ym}&pageNo=1&numOfRows=1"
+    try:
+        tr = requests.get(test_url, timeout=15)
+        if '<resultCode>00</resultCode>' in tr.text:
+            print(f"✅ API 테스트 성공 (강남구 {test_ym})")
+        else:
+            import re
+            rc = re.search(r'<resultCode>(\d+)</resultCode>', tr.text)
+            rm = re.search(r'<resultMsg>([^<]+)</resultMsg>', tr.text)
+            code = rc.group(1) if rc else 'unknown'
+            msg = rm.group(1) if rm else tr.text[:200]
+            print(f"❌ API 테스트 실패: {code} - {msg}")
+            print("  → data.go.kr에서 API 키 상태를 확인하세요")
+            exit(1)
+    except Exception as e:
+        print(f"❌ API 연결 실패: {e}")
+        exit(1)
+    print()
+    
     months_6=get_months(6)
     print(f"Step 1: 전 지역 최근 6개월 ({months_6[0]}~{months_6[-1]})")
     recent=[]
@@ -594,6 +632,11 @@ def main():
         for m in months_6: recent.extend(fetch(code,m))
         if i%20==0: print(f"  [{i}/{total}]..."); time.sleep(1)
     print(f"  → {len(recent)}건")
+    if len(recent) == 0:
+        print("\n❌ 에러: 데이터를 가져오지 못했습니다!")
+        print("  → API 키를 확인하세요 (GitHub Secrets: MOLIT_API_KEY)")
+        print("  → data.go.kr에서 API 키가 활성화되어 있는지 확인하세요")
+        exit(1)
     t20=top20(recent)
     keys=set((it['apt_name'],it['sido'],it['sigungu']) for it in t20)
     regs=set(it['region_code'] for it in t20)
