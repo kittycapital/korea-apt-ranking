@@ -207,6 +207,30 @@ def monthly_avg(data, keys):
             m[ym].append(it['price_per_pyeong'])
     return {ym:round(sum(v)/len(v)) for ym,v in sorted(m.items())}
 
+def per_apt_monthly(data, t20):
+    """각 아파트별 월별 평당가 계산"""
+    all_months = set()
+    apt_data = defaultdict(lambda: defaultdict(list))
+    keys = set((it['apt_name'],it['sido'],it['sigungu']) for it in t20)
+    for it in data:
+        k = (it['apt_name'],it['sido'],it['sigungu'])
+        if k in keys:
+            ym = f"{it['deal_year']}.{it['deal_month'].zfill(2)}"
+            all_months.add(ym)
+            apt_data[k][ym].append(it['price_per_pyeong'])
+    months = sorted(all_months)
+    result = []
+    for it in t20:
+        k = (it['apt_name'],it['sido'],it['sigungu'])
+        vals = []
+        for m in months:
+            if m in apt_data[k]:
+                vals.append(round(sum(apt_data[k][m])/len(apt_data[k][m])))
+            else:
+                vals.append(None)
+        result.append({'name': it['apt_name'], 'values': vals})
+    return months, result
+
 def region_dist(t20):
     d=defaultdict(int)
     for it in t20: d[it['sigungu']]+=1
@@ -248,11 +272,11 @@ def insights(t20, mavg):
             'top_region':list(rd.keys())[0],'top_region_count':list(rd.values())[0],
             'streak':streak,'direction':direction}
 
-def gen_html(t20, rch, mavg, rdist, ins, gkey):
+def gen_html(t20, rch, mavg, rdist, ins, gkey, apt_months, apt_series):
     ut=datetime.now().strftime('%Y.%m.%d %H:%M')
     cl=json.dumps(list(mavg.keys()));cv=json.dumps(list(mavg.values()))
     dl=json.dumps(list(rdist.keys()));dv=json.dumps(list(rdist.values()))
-    colors=['#00d4aa','#4ecdc4','#ff6b6b','#45b7d1','#96ceb4','#ffeaa7','#dfe6e9','#a29bfe','#fd79a8','#e17055','#00b894','#6c5ce7','#fdcb6e','#e84393','#636e72']
+    colors=['#00d4aa','#4ecdc4','#ff6b6b','#45b7d1','#96ceb4','#ffeaa7','#dfe6e9','#a29bfe','#fd79a8','#e17055','#00b894','#6c5ce7','#fdcb6e','#e84393','#636e72','#fab1a0','#74b9ff','#55efc4','#b2bec3','#ff7675']
     dc=json.dumps(colors[:len(rdist)])
     af=fp(ins['avg']);mom=ins['mom']
     ms='▲' if mom>0 else ('▼' if mom<0 else '─')
@@ -272,32 +296,47 @@ def gen_html(t20, rch, mavg, rdist, ins, gkey):
         if bd[1]<0: tp.append(f"❄️ 최대 하락: {t20[bd[0]]['apt_name']} ({bd[1]}위)")
     th=' · '.join(tp) if tp else '📊 순위 변동 데이터 수집 중...'
     
+    # Per-apartment chart data
+    apt_labels = json.dumps(apt_months)
+    apt_datasets_js = "["
+    for i, s in enumerate(apt_series):
+        c = colors[i % len(colors)]
+        vals = json.dumps(s['values'])
+        apt_datasets_js += f"""{{
+            label:'{s['name']}',data:{vals},borderColor:'{c}',
+            backgroundColor:'transparent',tension:0.3,
+            pointRadius:0,pointHoverRadius:4,borderWidth:1.5,
+            spanGaps:true
+        }},"""
+    apt_datasets_js += "]"
+    
     rows=""
     for i,it in enumerate(t20):
         rc=rch[i]
         if rc=='new': ch='<span style="color:#ffeaa7;font-size:0.8rem;">NEW</span>'
-        elif rc>0: ch=f'<span style="color:#00d4aa;">▲{rc}</span>'
-        elif rc<0: ch=f'<span style="color:#ff4757;">▼{abs(rc)}</span>'
+        elif rc>0: ch=f'<span style="color:#00d4aa;">▲{{rc}}</span>'
+        elif rc<0: ch=f'<span style="color:#ff4757;">▼{{abs(rc)}}</span>'
         else: ch='<span style="color:#888;">─</span>'
-        dd=f"{it['deal_year']}.{it['deal_month'].zfill(2)}.{it['deal_day'].zfill(2)}"
-        loc=f"{it['sido']} {it['sigungu']}"
-        mq=f"{it['apt_name']}+{it['sido']}+{it['sigungu']}+{it['dong']}"
+        dd=f"{{it['deal_year']}}.{{it['deal_month'].zfill(2)}}.{{it['deal_day'].zfill(2)}}"
+        loc=f"{{it['sido']}} {{it['sigungu']}}"
+        mq=f"{{it['apt_name']}}+{{it['sido']}}+{{it['sigungu']}}+{{it['dong']}}"
+        c = colors[i % len(colors)]
         rows+=f'''
-        <tr class="main-row" onclick="toggleDetail({i+1})">
-            <td class="rank-cell">{i+1}</td><td class="change-cell">{ch}</td>
-            <td class="apt-name">{it['apt_name']} <span class="arrow" id="arrow-{i+1}">▼</span></td>
-            <td class="loc-cell">{loc}</td><td class="price">{fp(it['price_per_pyeong'])}</td>
+        <tr class="main-row" data-idx="{{i}}" onclick="handleRowClick({{i}})">
+            <td class="rank-cell">{{i+1}}</td><td class="change-cell">{{ch}}</td>
+            <td class="apt-name"><span class="color-dot" style="background:{{c}};"></span>{{it['apt_name']}} <span class="arrow" id="arrow-{{i+1}}">▼</span></td>
+            <td class="loc-cell">{{loc}}</td><td class="price">{{fp(it['price_per_pyeong'])}}</td>
         </tr>
-        <tr class="detail-row" id="detail-{i+1}"><td colspan="5"><div class="detail-content">
+        <tr class="detail-row" id="detail-{{i+1}}"><td colspan="5"><div class="detail-content">
             <div class="detail-info"><table class="detail-table">
-                <tr><th>동</th><td>{it['dong']}</td></tr>
-                <tr><th>전용면적</th><td>{it['area_m2']}㎡ ({it['area_pyeong']}평)</td></tr>
-                <tr><th>거래금액</th><td>{fb(it['price'])}</td></tr>
-                <tr><th>거래일</th><td>{dd}</td></tr>
-                <tr><th>층</th><td>{it['floor']}층</td></tr>
-                <tr><th>건축년도</th><td>{it['build_year']}년</td></tr>
+                <tr><th>동</th><td>{{it['dong']}}</td></tr>
+                <tr><th>전용면적</th><td>{{it['area_m2']}}㎡ ({{it['area_pyeong']}}평)</td></tr>
+                <tr><th>거래금액</th><td>{{fb(it['price'])}}</td></tr>
+                <tr><th>거래일</th><td>{{dd}}</td></tr>
+                <tr><th>층</th><td>{{it['floor']}}층</td></tr>
+                <tr><th>건축년도</th><td>{{it['build_year']}}년</td></tr>
             </table></div>
-            <div class="detail-map"><iframe width="300" height="200" style="border:0;border-radius:8px;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key={gkey}&q={mq}&zoom=15"></iframe></div>
+            <div class="detail-map"><iframe width="300" height="200" style="border:0;border-radius:8px;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key={{gkey}}&q={{mq}}&zoom=15"></iframe></div>
         </div></td></tr>'''
 
     return f'''<!DOCTYPE html>
@@ -318,23 +357,30 @@ h1{{font-size:2rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}}
 .insight-card .label{{color:#888;font-size:0.8rem;margin-bottom:8px}}
 .insight-card .value{{font-size:1.3rem;font-weight:700}}
 .insight-card .sub{{font-size:0.85rem;margin-top:4px;color:#888}}
-.trend-bar{{background:#1a1a1a;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:0.9rem;color:#aaa}}
-.content-grid{{display:grid;grid-template-columns:380px 1fr;gap:24px}}
-.left-panel{{display:flex;flex-direction:column;gap:20px}}
-.chart-box,.donut-box{{background:#1a1a1a;border-radius:12px;padding:20px}}
-.chart-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}}
-.chart-title{{font-size:0.95rem;font-weight:500}}
+.chart-section{{background:#1a1a1a;border-radius:12px;padding:24px;margin-bottom:20px}}
+.chart-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}}
+.chart-title{{font-size:1rem;font-weight:700}}
+.chart-hint{{font-size:0.8rem;color:#555;margin-top:8px;text-align:center}}
 .toggle-btns{{display:flex;gap:4px}}
 .toggle-btn{{background:#333;border:none;color:#aaa;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s}}
 .toggle-btn.active{{background:#00d4aa;color:#000}}
-.chart-canvas{{width:100%;height:200px}}
-.donut-canvas{{width:100%;height:200px}}
+.chart-canvas-wrap{{width:100%;height:320px;position:relative}}
+.chart-canvas-wrap canvas{{width:100%!important;height:100%!important}}
+.selected-label{{position:absolute;top:8px;left:12px;font-size:0.9rem;font-weight:700;color:#00d4aa;opacity:0;transition:opacity 0.3s;pointer-events:none}}
+.selected-label.show{{opacity:1}}
+.trend-bar{{background:#1a1a1a;border-radius:12px;padding:16px 20px;margin-bottom:20px;font-size:0.9rem;color:#aaa}}
+.charts-row{{display:grid;grid-template-columns:1fr 350px;gap:20px;margin-bottom:24px}}
+.donut-box{{background:#1a1a1a;border-radius:12px;padding:20px}}
+.donut-canvas{{width:100%;height:250px}}
 table.main-table{{width:100%;border-collapse:collapse}}
 table.main-table thead th{{text-align:left;padding:14px 10px;border-bottom:2px solid #333;font-weight:500;color:#aaa;font-size:0.82rem}}
 table.main-table thead th:last-child{{text-align:right}}
-.main-row{{cursor:pointer;transition:background 0.2s}}
+.main-row{{cursor:pointer;transition:background 0.25s,opacity 0.25s}}
 .main-row:hover{{background:#1a1a1a}}
 .main-row td{{padding:16px 10px;border-bottom:1px solid #222;font-size:0.95rem}}
+.main-row.active-row{{background:rgba(0,212,170,0.08)}}
+.main-row.dimmed{{opacity:0.35}}
+.color-dot{{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}}
 .rank-cell{{font-weight:700;color:#666;width:40px}}
 .change-cell{{width:50px;font-size:0.85rem}}
 .apt-name{{font-weight:500}}
@@ -352,52 +398,208 @@ table.main-table thead th:last-child{{text-align:right}}
 .detail-table th{{text-align:left;padding:7px 16px 7px 0;color:#666;font-weight:400;font-size:0.88rem;width:90px}}
 .detail-table td{{padding:7px 0;font-size:0.93rem;color:#ccc}}
 .footer{{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#555;font-size:0.8rem;text-align:center}}
-@media(max-width:1024px){{.insight-cards{{grid-template-columns:repeat(2,1fr)}}.content-grid{{grid-template-columns:1fr}}.left-panel{{flex-direction:row}}.chart-box,.donut-box{{flex:1}}}}
-@media(max-width:600px){{body{{padding:20px 12px}}h1{{font-size:1.4rem}}.insight-cards{{grid-template-columns:1fr 1fr}}.left-panel{{flex-direction:column}}.detail-content{{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}}.detail-map iframe{{width:100%;max-width:300px}}.main-row td{{padding:12px 6px;font-size:0.88rem}}}}
+@media(max-width:1024px){{.insight-cards{{grid-template-columns:repeat(2,1fr)}}.charts-row{{grid-template-columns:1fr}}}}
+@media(max-width:600px){{body{{padding:20px 12px}}h1{{font-size:1.4rem}}.insight-cards{{grid-template-columns:1fr 1fr}}.chart-canvas-wrap{{height:220px}}.detail-content{{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}}.detail-map iframe{{width:100%;max-width:300px}}.main-row td{{padding:12px 6px;font-size:0.88rem}}}}
 </style>
 </head>
 <body>
 <div class="container">
 <h1>전국 아파트 평당가 TOP 20 <span style="font-weight:400;font-size:1rem;color:#888;">(전용면적 기준)</span></h1>
 <p class="subtitle">최근 6개월 실거래 기준 · 단지별 최고가</p>
+
 <div class="insight-cards">
 <div class="insight-card"><div class="label">TOP 20 평균 평당가</div><div class="value">{af}</div></div>
 <div class="insight-card"><div class="label">전월 대비</div><div class="value" style="color:{mc};">{ms} {abs(mom)}%</div></div>
 <div class="insight-card"><div class="label">최고가 단지</div><div class="value" style="font-size:1.1rem;">{ins['top_apt']}</div><div class="sub">{fp(ins['top_apt_price'])}</div></div>
 <div class="insight-card"><div class="label">최다 지역</div><div class="value" style="font-size:1.1rem;">{ins['top_region']}</div><div class="sub">TOP 20 중 {ins['top_region_count']}개</div></div>
 </div>
-<div class="trend-bar">{th}</div>
-<div class="content-grid">
-<div class="left-panel">
-<div class="chart-box">
-<div class="chart-header"><span class="chart-title">평균 평당가 추이</span>
+
+<div class="chart-section" id="chartSection">
+<div class="chart-header">
+<span class="chart-title">📈 아파트별 평당가 추이</span>
 <div class="toggle-btns">
 <button class="toggle-btn" onclick="setRange(12)" id="btn-1y">1년</button>
 <button class="toggle-btn" onclick="setRange(24)" id="btn-2y">2년</button>
 <button class="toggle-btn active" onclick="setRange(36)" id="btn-3y">3년</button>
-</div></div>
-<canvas id="trendChart" class="chart-canvas"></canvas>
 </div>
+</div>
+<div class="chart-canvas-wrap">
+<div class="selected-label" id="selectedLabel"></div>
+<canvas id="trendChart"></canvas>
+</div>
+<div class="chart-hint">👆 아래 리스트에서 아파트를 클릭하면 해당 추이가 강조됩니다</div>
+</div>
+
+<div class="trend-bar">{th}</div>
+
+<div class="charts-row">
 <div class="donut-box">
 <div class="chart-header"><span class="chart-title">지역 분포</span></div>
 <canvas id="donutChart" class="donut-canvas"></canvas>
 </div>
 </div>
-<div class="right-panel">
-<table class="main-table"><thead><tr>
-<th>순위</th><th></th><th>단지명</th><th>지역</th><th style="text-align:right;">평당가</th>
-</tr></thead><tbody>{rows}</tbody></table>
-</div>
-</div>
+
+<table class="main-table">
+<thead><tr><th>순위</th><th></th><th>단지명</th><th>지역</th><th style="text-align:right;">평당가</th></tr></thead>
+<tbody>{rows}</tbody>
+</table>
+
 <div class="footer">마지막 업데이트: {ut} · 데이터 출처: 국토교통부 실거래가 공개시스템</div>
 </div>
+
 <script>
-const aL={cl};const aV={cv};const dL={dl};const dV={dv};const dC={dc};
-const ctx=document.getElementById('trendChart').getContext('2d');
-const tc=new Chart(ctx,{{type:'line',data:{{labels:aL,datasets:[{{data:aV,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.1)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:5,borderWidth:2}}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}},tooltip:{{backgroundColor:'#1a1a1a',titleColor:'#fff',bodyColor:'#00d4aa',borderColor:'#333',borderWidth:1,callbacks:{{label:function(c){{const v=c.parsed.y;const b=Math.floor(v/10000);const r=v%10000;return b>0?b+'억 '+r.toLocaleString()+'만':v.toLocaleString()+'만'}}}}}}}},scales:{{x:{{ticks:{{color:'#666',maxRotation:45}},grid:{{color:'#222'}}}},y:{{ticks:{{color:'#666',callback:function(v){{const b=Math.floor(v/10000);return b>0?b+'억':v.toLocaleString()+'만'}}}},grid:{{color:'#222'}}}}}}}}}});
-function setRange(m){{document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));document.getElementById(m===12?'btn-1y':m===24?'btn-2y':'btn-3y').classList.add('active');tc.data.labels=aL.slice(-m);tc.data.datasets[0].data=aV.slice(-m);tc.update()}}
-new Chart(document.getElementById('donutChart').getContext('2d'),{{type:'doughnut',data:{{labels:dL,datasets:[{{data:dV,backgroundColor:dC,borderWidth:0}}]}},options:{{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{{legend:{{position:'right',labels:{{color:'#aaa',font:{{size:12}},padding:12}}}}}}}}}});
-function toggleDetail(id){{document.getElementById('detail-'+id).classList.toggle('show');document.getElementById('arrow-'+id).classList.toggle('open')}}
+const aptLabels = {apt_labels};
+const aptDatasets = {apt_datasets_js};
+const avgLabels = {cl};
+const avgValues = {cv};
+const dL={dl};const dV={dv};const dC={dc};
+
+const COLORS = {json.dumps(colors[:20])};
+
+/* ── Chart.js: 아파트별 추이 ── */
+const ctx = document.getElementById('trendChart').getContext('2d');
+const datasets = aptDatasets.map((d, i) => ({{
+    ...d,
+    borderColor: COLORS[i],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    spanGaps: true,
+    _origColor: COLORS[i]
+}}));
+
+const tc = new Chart(ctx, {{
+    type: 'line',
+    data: {{ labels: aptLabels, datasets: datasets }},
+    options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+            legend: {{ display: false }},
+            tooltip: {{
+                backgroundColor: '#1a1a1a', titleColor: '#fff',
+                bodyColor: '#ccc', borderColor: '#333', borderWidth: 1,
+                filter: function(item) {{ return item.raw !== null; }},
+                callbacks: {{
+                    label: function(c) {{
+                        if (c.raw === null) return null;
+                        const v = c.raw;
+                        const b = Math.floor(v / 10000);
+                        const r = v % 10000;
+                        const p = b > 0 ? b + '억 ' + r.toLocaleString() + '만' : v.toLocaleString() + '만';
+                        return c.dataset.label + ': ' + p;
+                    }}
+                }}
+            }}
+        }},
+        scales: {{
+            x: {{ ticks: {{ color: '#666', maxRotation: 45, maxTicksLimit: 12 }}, grid: {{ color: '#222' }} }},
+            y: {{
+                ticks: {{
+                    color: '#666',
+                    callback: function(v) {{
+                        const b = Math.floor(v / 10000);
+                        return b > 0 ? b + '억' : v.toLocaleString() + '만';
+                    }}
+                }},
+                grid: {{ color: '#222' }}
+            }}
+        }}
+    }}
+}});
+
+/* ── 기간 토글 ── */
+function setRange(m) {{
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(m === 12 ? 'btn-1y' : m === 24 ? 'btn-2y' : 'btn-3y').classList.add('active');
+    tc.data.labels = aptLabels.slice(-m);
+    tc.data.datasets.forEach((ds, i) => {{
+        ds.data = aptDatasets[i].data.slice(-m);
+    }});
+    tc.update();
+}}
+
+/* ── 도넛 차트 ── */
+new Chart(document.getElementById('donutChart').getContext('2d'), {{
+    type: 'doughnut',
+    data: {{ labels: dL, datasets: [{{ data: dV, backgroundColor: dC, borderWidth: 0 }}] }},
+    options: {{ responsive: true, maintainAspectRatio: false, cutout: '60%',
+        plugins: {{ legend: {{ position: 'right', labels: {{ color: '#aaa', font: {{ size: 12 }}, padding: 12 }} }} }}
+    }}
+}});
+
+/* ── 클릭 인터랙션: 리스트 → 차트 하이라이트 ── */
+let activeIdx = -1;
+
+function highlightChart(idx) {{
+    const label = document.getElementById('selectedLabel');
+    tc.data.datasets.forEach((ds, i) => {{
+        if (i === idx) {{
+            ds.borderWidth = 3.5;
+            ds.borderColor = ds._origColor;
+            ds.pointRadius = 3;
+            ds.pointBackgroundColor = ds._origColor;
+        }} else {{
+            ds.borderWidth = 1;
+            ds.borderColor = ds._origColor + '1A';
+            ds.pointRadius = 0;
+        }}
+    }});
+    label.textContent = aptDatasets[idx].label;
+    label.style.color = COLORS[idx];
+    label.classList.add('show');
+    tc.update();
+}}
+
+function resetChart() {{
+    const label = document.getElementById('selectedLabel');
+    tc.data.datasets.forEach((ds) => {{
+        ds.borderWidth = 1.5;
+        ds.borderColor = ds._origColor;
+        ds.pointRadius = 0;
+    }});
+    label.classList.remove('show');
+    tc.update();
+}}
+
+function highlightRows(idx) {{
+    document.querySelectorAll('.main-row').forEach((row, i) => {{
+        if (i === idx) {{
+            row.classList.add('active-row');
+            row.classList.remove('dimmed');
+        }} else {{
+            row.classList.remove('active-row');
+            row.classList.add('dimmed');
+        }}
+    }});
+}}
+
+function resetRows() {{
+    document.querySelectorAll('.main-row').forEach(row => {{
+        row.classList.remove('active-row', 'dimmed');
+    }});
+}}
+
+function handleRowClick(idx) {{
+    if (activeIdx === idx) {{
+        activeIdx = -1;
+        resetChart();
+        resetRows();
+    }} else {{
+        activeIdx = idx;
+        highlightChart(idx);
+        highlightRows(idx);
+        document.getElementById('chartSection').scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+    }}
+    toggleDetail(idx + 1);
+}}
+
+function toggleDetail(id) {{
+    document.getElementById('detail-' + id).classList.toggle('show');
+    document.getElementById('arrow-' + id).classList.toggle('open');
+}}
 </script>
 </body>
 </html>'''
@@ -428,6 +630,7 @@ def main():
     
     print("Step 3: 분석...")
     mavg=monthly_avg(alldata,keys)
+    apt_months, apt_series = per_apt_monthly(alldata, t20)
     rd=region_dist(t20)
     os.makedirs(DATA_DIR,exist_ok=True)
     rch=rank_changes(t20,os.path.join(DATA_DIR,'previous_rank.json'))
@@ -437,7 +640,7 @@ def main():
     with open(os.path.join(DATA_DIR,'history.json'),'w',encoding='utf-8') as f: json.dump(mavg,f,ensure_ascii=False,indent=2)
     
     print("Step 4: HTML 생성...")
-    html=gen_html(t20,rch,mavg,rd,ins,GOOGLE_MAPS_API_KEY)
+    html=gen_html(t20,rch,mavg,rd,ins,GOOGLE_MAPS_API_KEY,apt_months,apt_series)
     with open('index.html','w',encoding='utf-8') as f: f.write(html)
     
     print("\n✅ 완료!")
