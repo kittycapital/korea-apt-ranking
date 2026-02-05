@@ -364,7 +364,7 @@ h1{{font-size:2rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}}
 .toggle-btns{{display:flex;gap:4px}}
 .toggle-btn{{background:#333;border:none;color:#aaa;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s}}
 .toggle-btn.active{{background:#00d4aa;color:#000}}
-.chart-canvas-wrap{{width:100%;height:320px;position:relative}}
+.chart-canvas-wrap{{width:100%;height:200px;position:relative}}
 .chart-canvas-wrap canvas{{width:100%!important;height:100%!important}}
 .selected-label{{position:absolute;top:8px;left:12px;font-size:0.9rem;font-weight:700;color:#00d4aa;opacity:0;transition:opacity 0.3s;pointer-events:none}}
 .selected-label.show{{opacity:1}}
@@ -399,7 +399,7 @@ table.main-table thead th:last-child{{text-align:right}}
 .detail-table td{{padding:7px 0;font-size:0.93rem;color:#ccc}}
 .footer{{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#555;font-size:0.8rem;text-align:center}}
 @media(max-width:1024px){{.insight-cards{{grid-template-columns:repeat(2,1fr)}}.charts-row{{grid-template-columns:1fr}}}}
-@media(max-width:600px){{body{{padding:20px 12px}}h1{{font-size:1.4rem}}.insight-cards{{grid-template-columns:1fr 1fr}}.chart-canvas-wrap{{height:220px}}.detail-content{{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}}.detail-map iframe{{width:100%;max-width:300px}}.main-row td{{padding:12px 6px;font-size:0.88rem}}}}
+@media(max-width:600px){{body{{padding:20px 12px}}h1{{font-size:1.4rem}}.insight-cards{{grid-template-columns:1fr 1fr}}.chart-canvas-wrap{{height:180px}}.detail-content{{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}}.detail-map iframe{{width:100%;max-width:300px}}.main-row td{{padding:12px 6px;font-size:0.88rem}}}}
 </style>
 </head>
 <body>
@@ -432,17 +432,17 @@ table.main-table thead th:last-child{{text-align:right}}
 
 <div class="trend-bar">{th}</div>
 
-<div class="charts-row">
+<table class="main-table">
+<thead><tr><th>순위</th><th></th><th>단지명</th><th>지역</th><th style="text-align:right;">평당가</th></tr></thead>
+<tbody>{rows}</tbody>
+</table>
+
+<div class="donut-section">
 <div class="donut-box">
 <div class="chart-header"><span class="chart-title">지역 분포</span></div>
 <canvas id="donutChart" class="donut-canvas"></canvas>
 </div>
 </div>
-
-<table class="main-table">
-<thead><tr><th>순위</th><th></th><th>단지명</th><th>지역</th><th style="text-align:right;">평당가</th></tr></thead>
-<tbody>{rows}</tbody>
-</table>
 
 <div class="footer">마지막 업데이트: {ut} · 데이터 출처: 국토교통부 실거래가 공개시스템</div>
 </div>
