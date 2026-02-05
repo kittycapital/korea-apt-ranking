@@ -369,9 +369,6 @@ h1{{font-size:2rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}}
 .selected-label{{position:absolute;top:8px;left:12px;font-size:0.9rem;font-weight:700;color:#00d4aa;opacity:0;transition:opacity 0.3s;pointer-events:none}}
 .selected-label.show{{opacity:1}}
 .trend-bar{{background:#1a1a1a;border-radius:12px;padding:16px 20px;margin-bottom:20px;font-size:0.9rem;color:#aaa}}
-.charts-row{{display:grid;grid-template-columns:1fr 350px;gap:20px;margin-bottom:24px}}
-.donut-box{{background:#1a1a1a;border-radius:12px;padding:20px}}
-.donut-canvas{{width:100%;height:250px}}
 table.main-table{{width:100%;border-collapse:collapse}}
 table.main-table thead th{{text-align:left;padding:14px 10px;border-bottom:2px solid #333;font-weight:500;color:#aaa;font-size:0.82rem}}
 table.main-table thead th:last-child{{text-align:right}}
@@ -398,7 +395,7 @@ table.main-table thead th:last-child{{text-align:right}}
 .detail-table th{{text-align:left;padding:7px 16px 7px 0;color:#666;font-weight:400;font-size:0.88rem;width:90px}}
 .detail-table td{{padding:7px 0;font-size:0.93rem;color:#ccc}}
 .footer{{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#555;font-size:0.8rem;text-align:center}}
-@media(max-width:1024px){{.insight-cards{{grid-template-columns:repeat(2,1fr)}}.charts-row{{grid-template-columns:1fr}}}}
+@media(max-width:1024px){{.insight-cards{{grid-template-columns:repeat(2,1fr)}}}}
 @media(max-width:600px){{body{{padding:20px 12px}}h1{{font-size:1.4rem}}.insight-cards{{grid-template-columns:1fr 1fr}}.chart-canvas-wrap{{height:180px}}.detail-content{{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}}.detail-map iframe{{width:100%;max-width:300px}}.main-row td{{padding:12px 6px;font-size:0.88rem}}}}
 </style>
 </head>
@@ -437,13 +434,6 @@ table.main-table thead th:last-child{{text-align:right}}
 <tbody>{rows}</tbody>
 </table>
 
-<div class="donut-section">
-<div class="donut-box">
-<div class="chart-header"><span class="chart-title">지역 분포</span></div>
-<canvas id="donutChart" class="donut-canvas"></canvas>
-</div>
-</div>
-
 <div class="footer">마지막 업데이트: {ut} · 데이터 출처: 국토교통부 실거래가 공개시스템</div>
 </div>
 
@@ -452,7 +442,6 @@ const aptLabels = {apt_labels};
 const aptDatasets = {apt_datasets_js};
 const avgLabels = {cl};
 const avgValues = {cv};
-const dL={dl};const dV={dv};const dC={dc};
 
 const COLORS = {json.dumps(colors[:20])};
 
@@ -520,15 +509,6 @@ function setRange(m) {{
     }});
     tc.update();
 }}
-
-/* ── 도넛 차트 ── */
-new Chart(document.getElementById('donutChart').getContext('2d'), {{
-    type: 'doughnut',
-    data: {{ labels: dL, datasets: [{{ data: dV, backgroundColor: dC, borderWidth: 0 }}] }},
-    options: {{ responsive: true, maintainAspectRatio: false, cutout: '60%',
-        plugins: {{ legend: {{ position: 'right', labels: {{ color: '#aaa', font: {{ size: 12 }}, padding: 12 }} }} }}
-    }}
-}});
 
 /* ── 클릭 인터랙션: 리스트 → 차트 하이라이트 ── */
 let activeIdx = -1;
