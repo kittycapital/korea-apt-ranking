@@ -23,7 +23,7 @@ h1{font-size:2rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}
 .toggle-btns{display:flex;gap:4px}
 .toggle-btn{background:#333;border:none;color:#aaa;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s}
 .toggle-btn.active{background:#00d4aa;color:#000}
-.chart-canvas-wrap{width:100%;height:320px;position:relative}
+.chart-canvas-wrap{width:100%;height:200px;position:relative}
 .chart-canvas-wrap canvas{width:100%!important;height:100%!important}
 .selected-label{position:absolute;top:8px;left:12px;font-size:0.9rem;font-weight:700;color:#00d4aa;opacity:0;transition:opacity 0.3s;pointer-events:none}
 .selected-label.show{opacity:1}
@@ -59,7 +59,7 @@ table.main-table thead th:last-child{text-align:right}
 .map-placeholder{width:300px;height:200px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-size:0.85rem;text-align:center;line-height:1.5}
 .footer{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#555;font-size:0.8rem;text-align:center}
 @media(max-width:1024px){.insight-cards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){body{padding:20px 12px}h1{font-size:1.4rem}.insight-cards{grid-template-columns:1fr 1fr}.chart-canvas-wrap{height:220px}.detail-content{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}.detail-map iframe,.map-placeholder{width:100%;max-width:300px}.main-row td{padding:12px 6px;font-size:0.88rem}}
+@media(max-width:600px){body{padding:20px 12px}h1{font-size:1.4rem}.insight-cards{grid-template-columns:1fr 1fr}.chart-canvas-wrap{height:180px}.detail-content{flex-direction:column;padding:15px 8px 15px 20px;gap:16px}.detail-map iframe,.map-placeholder{width:100%;max-width:300px}.main-row td{padding:12px 6px;font-size:0.88rem}}
 </style>
 </head>
 <body>
@@ -91,13 +91,6 @@ table.main-table thead th:last-child{text-align:right}
 </div>
 
 <div class="trend-bar">📈 3개월 연속 상승 중 · 🔥 최대 상승: 올림픽파크포레온 (+4위) · 🆕 신규 진입: 브라이튼N40</div>
-
-<div class="donut-section">
-<div class="donut-box">
-<div class="chart-header"><span class="chart-title">지역 분포</span></div>
-<canvas id="donutChart" class="donut-canvas"></canvas>
-</div>
-</div>
 
 <table class="main-table">
 <thead><tr><th>순위</th><th></th><th>단지명</th><th>지역</th><th style="text-align:right;">평당가</th></tr></thead>
@@ -164,6 +157,13 @@ table.main-table thead th:last-child{text-align:right}
 <tr class="detail-row" id="detail-20"><td colspan="5"><div class="detail-content"><div class="detail-info"><table class="detail-table"><tr><th>동</th><td>둔촌동</td></tr><tr><th>전용면적</th><td>84.98㎡ (25.7평)</td></tr><tr><th>거래금액</th><td>48.6억</td></tr><tr><th>거래일</th><td>2025.11.30</td></tr><tr><th>층</th><td>42층</td></tr><tr><th>건축년도</th><td>2024년</td></tr></table></div><div class="detail-map"><div class="map-placeholder">🗺️ Google Maps<br>(API 연동 후 표시)</div></div></div></td></tr>
 
 </tbody></table>
+
+<div class="donut-section">
+<div class="donut-box">
+<div class="chart-header"><span class="chart-title">지역 분포</span></div>
+<canvas id="donutChart" class="donut-canvas"></canvas>
+</div>
+</div>
 
 <div class="footer">마지막 업데이트: 2026.02.05 09:00 · 데이터 출처: 국토교통부 실거래가 공개시스템</div>
 </div>
