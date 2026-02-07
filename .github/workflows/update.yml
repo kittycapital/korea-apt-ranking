@@ -1,27 +1,28 @@
-name: Update Seoul Apartment Rankings
+name: Update Apartment Dashboards
 
 on:
   schedule:
-    - cron: '0 18 * * 4'  # 매주 금요일 오전 3시 KST (목요일 18:00 UTC)
+    - cron: '0 18 * * *'  # 매일 새벽 3시 KST (18:00 UTC)
   workflow_dispatch:
 
 jobs:
-  update-rankings:
+  update-all:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install requests
-      - name: Fetch data and generate HTML
+      - name: Fetch data and generate dashboards
         env:
           MOLIT_API_KEY: ${{ secrets.MOLIT_API_KEY }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-        run: python fetch_data.py
+        run: python fetch_all.py
       - name: Commit and push
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add index.html data/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update rankings $(date +'%Y-%m-%d')" && git push)
+          git add data/ index.html seoul.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update dashboards $(date +'%Y-%m-%d')" && git push)
